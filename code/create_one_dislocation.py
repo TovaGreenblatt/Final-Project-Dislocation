@@ -184,6 +184,5 @@ if __name__ == '__main__':
     if(num_of_arguments > 3 and argv[3] == 'wrap'):
         wrap = True
     else:
-        wrap = False
-    
+        wrap = False    
     do(a_n, aa_dislocations, lattice_constant, wrap)
