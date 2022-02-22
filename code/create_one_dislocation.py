@@ -56,12 +56,8 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
     # The other three coordinates are the Burgers vector, in units of the Burgers vector length of one Burgers vector.
     
     for a_dislocation in aa_dislocations:
-        print("a_dislocation is:")
-        print("a_dislocation: ")
-        print(a_dislocation)
         a_dislocation_line_coordinates = a_dislocation[0:3]
-        # a_burgers = burgers * a_dislocation[3:6]
-        a_burgers = a_dislocation[3:6]
+        a_burgers = burgers * a_dislocation[3:6]
         a_dislocation_vector = a_dislocation[6:9]
         # the dislocation part is the proj of the burgers vector on the dislocation vector
         # dislocation_part = proj(a_burgers, a_dislocation_vector)
@@ -71,21 +67,9 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
         # that's why we made a new Coordinate system in which the X axis is the dislocation's direction, 
         # the Z axis is the part of the burgers vector which is vertical to the dislocation's direction.
         # the Y axis is the vector that is vertical to the others.
-        # x= a_dislocation_vector
-        # z = (burgers**2-dislocation_part**2)**0.5 # Pythagorean theorem 
-        # y = np.linalg.norm(x.dot(z))
         x= a_dislocation_vector/np.linalg.norm(a_dislocation_vector)
-        # z = np.linalg.norm((burgers**2-dislocation_part**2)**0.5) # Pythagorean theorem 
-        print("a_burgers: ")
-        print(a_burgers)
         z = (a_burgers - a_dislocation_vector)/np.linalg.norm(a_burgers - a_dislocation_vector)
-        print("x: ")
-        print(x)
-        print("z: ")
-        print(z)
         y = (np.cross(x, z))/np.linalg.norm(np.cross(x, z))
-        print("y: ")
-        print(y)
         aa_new_coordinate_system = np.matrix([x,y,z])
         aa_new_coordinate_system_inv = np.linalg.inv(aa_new_coordinate_system)
         # tranformation
@@ -117,10 +101,6 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
 # This function creates a dislocation line in the positive x direction, on the Thompson tetrahedron ABC plane.
 # The x component of the Burgers vector is the screw component. The z component is the edge component.
 def aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_burgers):
-    print(" in aaDislocationByStrain")
-    print(a_dislocation_line_coordinates)
-    print(a_burgers)
-
     # Find the location of each atom relative to the dislocation line.
     # a_y is the distance of each atom from the dislocation line in the y axis, and a_z is the distance of each atom from the dislocation line in the z axis.
     # Their short names are for the sake of brevity in the equations.
