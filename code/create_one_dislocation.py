@@ -3,8 +3,6 @@ import os
 import sys
 
 
-
-
 # A is the fcc cell dimension.
 FCC_LATTICE_CONSTANT = 3.615
 POISSONS_RATIO = 0.33
@@ -12,8 +10,6 @@ POISSONS_RATIO = 0.33
 X_INDEX = 0
 Y_INDEX = 1
 Z_INDEX = 2
-
-
 
 
 def do(a_n, aa_dislocations, lattice_constant, wrap):
@@ -56,14 +52,54 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
     dumpToFile(aa_atom_locations, aa_dimensions, 'atoms_perfect_crystal')
     # Shift the atoms to get the array with the dislocations.
     # Each line in the dislocation file describes one dislocation.
-    # The first three coordinates are the location of the dislcation line, in \AA (the x coordinate is don't care).
+    # The first three coordinates are the location of the dislocation line, in \AA (the x coordinate is don't care).
     # The other three coordinates are the Burgers vector, in units of the Burgers vector length of one Burgers vector.
+    
     for a_dislocation in aa_dislocations:
+        print("a_dislocation is:")
+        print("a_dislocation: ")
+        print(a_dislocation)
         a_dislocation_line_coordinates = a_dislocation[0:3]
-        a_burgers = burgers * a_dislocation[3:6]
-        print(a_dislocation_line_coordinates)
+        # a_burgers = burgers * a_dislocation[3:6]
+        a_burgers = a_dislocation[3:6]
+        a_dislocation_vector = a_dislocation[6:9]
+        # the dislocation part is the proj of the burgers vector on the dislocation vector
+        # dislocation_part = proj(a_burgers, a_dislocation_vector)
+
+        # we wanted to get rid from one of the dimensions of the burgers vector, because of the assumption
+        #  in the ____ book, that it has only two dimensions. 
+        # that's why we made a new Coordinate system in which the X axis is the dislocation's direction, 
+        # the Z axis is the part of the burgers vector which is vertical to the dislocation's direction.
+        # the Y axis is the vector that is vertical to the others.
+        # x= a_dislocation_vector
+        # z = (burgers**2-dislocation_part**2)**0.5 # Pythagorean theorem 
+        # y = np.linalg.norm(x.dot(z))
+        x= a_dislocation_vector/np.linalg.norm(a_dislocation_vector)
+        # z = np.linalg.norm((burgers**2-dislocation_part**2)**0.5) # Pythagorean theorem 
+        print("a_burgers: ")
         print(a_burgers)
+        z = (a_burgers - a_dislocation_vector)/np.linalg.norm(a_burgers - a_dislocation_vector)
+        print("x: ")
+        print(x)
+        print("z: ")
+        print(z)
+        y = (np.cross(x, z))/np.linalg.norm(np.cross(x, z))
+        print("y: ")
+        print(y)
+        aa_new_coordinate_system = np.matrix([x,y,z])
+        aa_new_coordinate_system_inv = np.linalg.inv(aa_new_coordinate_system)
+        # tranformation
+        for i in range(len(aa_atom_locations)):
+            aa_atom_locations[i] = np.matmul(aa_new_coordinate_system_inv, aa_atom_locations[i])
+        a_dislocation_line_coordinates = np.matmul(aa_new_coordinate_system_inv, a_dislocation_line_coordinates).getA1()
+        a_burgers = np.matmul(aa_new_coordinate_system_inv, a_burgers).getA1()
+        # movements
         aa_atom_locations = aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_burgers)
+        # tranformation
+        for i in range(len(aa_atom_locations)):
+            aa_atom_locations[i] = np.matmul(aa_new_coordinate_system, aa_atom_locations[i])
+
+    
     # After the atoms have been shifted, some of them might have moved out of the box.
     # If the box is periodic, we have to get them back in.
     if wrap == True:
@@ -81,6 +117,9 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
 # This function creates a dislocation line in the positive x direction, on the Thompson tetrahedron ABC plane.
 # The x component of the Burgers vector is the screw component. The z component is the edge component.
 def aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_burgers):
+    print(" in aaDislocationByStrain")
+    print(a_dislocation_line_coordinates)
+    print(a_burgers)
 
     # Find the location of each atom relative to the dislocation line.
     # a_y is the distance of each atom from the dislocation line in the y axis, and a_z is the distance of each atom from the dislocation line in the z axis.
@@ -142,20 +181,29 @@ def aGetDimensions():
 
 
 def aaGetDislocations():
-
     aa_dislocations = np.loadtxt('dislocations.ini')
     return aa_dislocations
 
 
-
-
 # This function returns an angle ranging from 0 to 2*pi.
 def aPositiveAngle(a_opposite_side, a_adjacent_side):
-
     angle = np.arctan2(a_opposite_side, a_adjacent_side)
     angle[angle < 0] += 2 * np.pi
     return angle
 
+
+#   Dividing the vector to the part in the direction of the dislocation    
+def proj(a_burgers, a_dislocation):
+    # finding norm of the vector a_dislocation
+    dislocation_norm = np.sqrt(sum(a_dislocation**2))    
+  
+    # Apply the formula as mentioned above
+    # for projecting a vector onto another vector
+    # find dot product using np.dot()
+    proj_of_burgers_on_dislocation = (np.dot(a_burgers, a_dislocation)/dislocation_norm)
+    
+    print("Projection of Vector u on Vector v is: ", proj_of_burgers_on_dislocation)
+    return proj_of_burgers_on_dislocation
 
 
 
