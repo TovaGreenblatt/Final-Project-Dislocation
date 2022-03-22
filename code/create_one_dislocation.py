@@ -54,34 +54,64 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
     # Each line in the dislocation file describes one dislocation.
     # The first three coordinates are the location of the dislocation line, in \AA (the x coordinate is don't care).
     # The other three coordinates are the Burgers vector, in units of the Burgers vector length of one Burgers vector.
-    
+    flag = True
     for a_dislocation in aa_dislocations:
         a_dislocation_line_coordinates = a_dislocation[0:3]
         a_burgers = burgers * a_dislocation[3:6]
         a_dislocation_vector = a_dislocation[6:9]
-        # the dislocation part is the proj of the burgers vector on the dislocation vector
-        # dislocation_part = proj(a_burgers, a_dislocation_vector)
-
         # we wanted to get rid from one of the dimensions of the burgers vector, because of the assumption
-        #  in the ____ book, that it has only two dimensions. 
+        # in the ____ book, that it has only two dimensions. 
         # that's why we made a new Coordinate system in which the X axis is the dislocation's direction, 
         # the Z axis is the part of the burgers vector which is vertical to the dislocation's direction.
         # the Y axis is the vector that is vertical to the others.
-        x= a_dislocation_vector/np.linalg.norm(a_dislocation_vector)
-        z = (a_burgers - a_dislocation_vector)/np.linalg.norm(a_burgers - a_dislocation_vector)
+        x = a_dislocation_vector/np.linalg.norm(a_dislocation_vector)
+        print("x")
+        print(x)
+        # if the burgers vertor and the dislocation vertor are parallel
+        if((np.cross(a_burgers,a_dislocation_vector)==np.zeros(3)).all()):
+            print("the burgers vertor and the dislocation vertor are parallel")
+            if(a_burgers[Z_INDEX]!=0):
+                value = (a_burgers[X_INDEX]+a_burgers[Y_INDEX])/a_burgers[Z_INDEX]
+                z = (1, 1, value)
+            elif a_burgers[Y_INDEX]!=0:
+                value = (a_burgers[X_INDEX]+a_burgers[Z_INDEX])/a_burgers[Y_INDEX]
+                z= (1,value, 1)
+            else:
+                value = (a_burgers[Z_INDEX]+a_burgers[Y_INDEX])/a_burgers[X_INDEX]
+                z= (value, 1, 1)
+        else:
+            z = (a_burgers - proj(a_burgers, a_dislocation_vector))
+        z = z / np.linalg.norm(z)
+        print("z")
+        print(z)
         y = (np.cross(x, z))/np.linalg.norm(np.cross(x, z))
+        print("y")
+        print(y)
+        print("need to print 3 zeros:")
+        print(np.dot(x,z))
+        print(np.dot(x,y))
+        print(np.dot(y,z))
         aa_new_coordinate_system = np.matrix([x,y,z])
+        # print(aa_new_coordinate_system)
         aa_new_coordinate_system_inv = np.linalg.inv(aa_new_coordinate_system)
+        # print(aa_new_coordinate_system_inv)
         # tranformation
         for i in range(len(aa_atom_locations)):
-            aa_atom_locations[i] = np.matmul(aa_new_coordinate_system_inv, aa_atom_locations[i])
+            aa_atom_locations[i] = np.matmul(aa_new_coordinate_system_inv, aa_atom_locations[i]).getA1()
+        # print("a_dislocation_line_coordinates before")
+        # print(a_dislocation_line_coordinates)
         a_dislocation_line_coordinates = np.matmul(aa_new_coordinate_system_inv, a_dislocation_line_coordinates).getA1()
+        # print("a_dislocation_line_coordinates after")
+        # print(a_dislocation_line_coordinates)
         a_burgers = np.matmul(aa_new_coordinate_system_inv, a_burgers).getA1()
         # movements
         aa_atom_locations = aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_burgers)
         # tranformation
         for i in range(len(aa_atom_locations)):
-            aa_atom_locations[i] = np.matmul(aa_new_coordinate_system, aa_atom_locations[i])
+            aa_atom_locations[i] = np.matmul(aa_new_coordinate_system, aa_atom_locations[i]).getA1()
+        # if flag:
+        #     flag = False
+        #     break
 
     
     # After the atoms have been shifted, some of them might have moved out of the box.
@@ -108,6 +138,7 @@ def aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_b
     a_z = aa_atom_locations[:, Z_INDEX] - a_dislocation_line_coordinates[Z_INDEX]
     # Calculate the displacement of each atom.
     aa_displacements = np.zeros(aa_atom_locations.shape)
+
     # Calculate the displacement due to the edge and screw components.
     # The formula for the displacement of each atom in an edge dislocation is taken from Hirth p. 78.
     aa_displacements[:, Z_INDEX] = a_burgers[Z_INDEX] / 2 / np.pi * (aPositiveAngle(a_y, a_z) + a_z * a_y / 2 / (1 - POISSONS_RATIO) / (a_z**2 + a_y**2))
@@ -148,7 +179,6 @@ def dumpToFile(aa_atom_locations, aa_dimensions, s_name):
 
 
 def aGetDimensions():
-
     f = open('dimensions.ini', 'r')
     lines = f.readlines()
     f.close()
@@ -172,7 +202,7 @@ def aPositiveAngle(a_opposite_side, a_adjacent_side):
     return angle
 
 
-#   Dividing the vector to the part in the direction of the dislocation    
+# Dividing the vector to the part in the direction of the dislocation    
 def proj(a_burgers, a_dislocation):
     # finding norm of the vector a_dislocation
     dislocation_norm = np.sqrt(sum(a_dislocation**2))    
