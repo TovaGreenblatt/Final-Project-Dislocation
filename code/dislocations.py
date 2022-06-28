@@ -17,24 +17,13 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
     # Calculate the constants.
     burgers = lattice_constant / np.sqrt(2)
     # Build one cell.
-    # This unit cell contains six atoms, and has the following unit vectors directions (specified in the following in the fcc coordinate system):
-    # (-1, 1, 0), (1, 1, 1), (1, 1, -2).
-    # This is the same idea as, but slightly different in detail, from the axes in ashkenazy03.
-    # This means that, on the Thompson tetrahedron, the x axis is AB, the y axis is D\delta, and the z axis is \delta{}C.
-    # Note that this is when the Thompson tetrahedron is defined with D at the origin, as in Hirth p. 296.
-    # (Other definitions, such as that by H. Foll, have it differently.)
-    # We'll work with the ABC slip plane, with the dislocation lines along the x axis.
-    # This means that for any dislocation, the screw component of the Burgers vector is the x component, and the edge component of the Burgers vector is the z component.
-    # The Burgers vector will not have a y component. There can be perfect screw dislocations, but no perfect edge dislocations, in the slip system.
-    aa_unit_cell = lattice_constant * np.array(((1 / 2 / np.sqrt(2), 0, 1 / 2 / np.sqrt(6) * 3),  # (0,0.5,-0.5)
-                                                (1 / 2 / np.sqrt(2), 1 / np.sqrt(3), 5 * np.sqrt(6) / 12), # (0.5,1,-0.5)
-                                                (0, 0, 0),  # (0,0,0)
-                                                (0, 1 / np.sqrt(3), 1 / np.sqrt(6)),  # (0.5,0.5,0)
-                                                (1 / 2 / np.sqrt(2), 2 / np.sqrt(3), 1 / 2 / np.sqrt(6)),  # (0.5,1,0.5)
-                                                (0, 2 / np.sqrt(3), 2 / np.sqrt(6))))  # (1,1,0)
-                                                #metrix of 3*6
+    aa_unit_cell = lattice_constant * np.array(((0, 0, 0),
+                                               (0.5, 0.5, 0),
+                                               (0.5, 0, 0.5),
+                                               (0, 0.5, 0.5)))
+                                                #metrix of 3*4
 
-    num_of_atoms_in_cell = aa_unit_cell.shape[0] #=6
+    num_of_atoms_in_cell = aa_unit_cell.shape[0] #=4
     # Create an array skeleton with nx*ny*nz cells. The number of cells in each dimension must be even.
     # The cells will be indexed from in each axis i from -ni/2 to ni/2 - 1.
     # The values of nx, ny, and nz are taken from an ini file, whose name must be specified in the command line call to the program.
@@ -42,7 +31,7 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
     aa_cell_ranges = [np.arange(i[0], i[1]) for i in aa_box_edges]
     aa_cell_indices = np.array([(x, y, z) for x in aa_cell_ranges[X_INDEX] for y in aa_cell_ranges[Y_INDEX] for z in aa_cell_ranges[Z_INDEX]])
     # Calculate the coordinates of each atom.
-    a_cell_vectors = lattice_constant * np.array((1 / np.sqrt(2), np.sqrt(3), 3 / np.sqrt(6)))
+    a_cell_vectors = lattice_constant * np.array((1, 1, 1))
     aa_cell_locations = aa_cell_indices * a_cell_vectors
     # Convolute to get the whole FCC array. Each line in aa_atom_locations represents on atom. Each column represents the coordinate in one axis.
     aa_atom_locations = np.array([i + j for i in aa_cell_locations for j in aa_unit_cell])
@@ -57,31 +46,18 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
     # The other three coordinates are the Burgers vector, in units of the Burgers vector length of one Burgers vector.
 
     for a_dislocation in aa_dislocations:
-        a_dislocation_line_coordinates = (1, 1, 1)
-        temp = np.zeros(3)
-        temp[0] = -3**0.5/2
-        temp[1] = 0
-        temp[2] = 1/2
-        # temp[2]=-0
-        # temp[0] = 0.5
-        # temp[1] = (2/3)**.5
-        a_burgers = (burgers) * temp
-        temp1 = np.zeros(3)
-        # temp1[0] = 0.14142
-        # temp1[1] = 0.46188
-        # temp1[2] = -0.40824
-        temp1[0] = 0
-        temp1[1] = (2*2**0.5)/37
-        temp1[2] = -1/3
-        a_dislocation_vector = temp
-        # a_dislocation_line_coordinates = a_dislocation[0:3]
-        # a_burgers = burgers * a_dislocation[3:6]
-        # a_dislocation_vector = a_dislocation[6:9]
+        a_dislocation_line_coordinates = a_dislocation[0:3]
+        a_burgers = a_dislocation[3:6]
+        a_dislocation_vector = a_dislocation[6:9]
 
 
         # a_burgers = a_burgers / np.linalg.norm(a_burgers)
-        # a_burgers = burgers * a_burgers
-        # a_dislocation_vector = a_dislocation_vector / np.linalg.norm(a_dislocation_vector)
+        # a_burgers = lattice_constant * a_burgers
+        # a_burgers = (lattice_constant/3**0.5) * a_burgers
+        # a_burgers = (lattice_constant/6) * a_burgers
+
+        a_burgers = lattice_constant * a_burgers
+        a_dislocation_vector = a_dislocation_vector / np.linalg.norm(a_dislocation_vector)
 
 
         aa_new_coordinate_system = getNewCoordinateSystem(a_dislocation_vector, a_burgers)
@@ -123,7 +99,7 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
         for i in range(len(aa_atom_locations)):
             aa_atom_locations[i] = transformation(aa_new_coordinate_system, aa_atom_locations[i])
 
-        break;
+        break
 
     # After the atoms have been shifted, some of them might have moved out of the box.
     # If the box is periodic, we have to get them back in.
@@ -147,6 +123,8 @@ def aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_b
     # Their short names are for the sake of brevity in the equations.
     a_y = aa_atom_locations[:, Y_INDEX] - a_dislocation_line_coordinates[Y_INDEX]
     a_z = aa_atom_locations[:, Z_INDEX] - a_dislocation_line_coordinates[Z_INDEX]
+    print(a_y)
+    print(a_z)
     # Calculate the displacement of each atom.
     aa_displacements = np.zeros(aa_atom_locations.shape)
 
@@ -234,7 +212,7 @@ def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
     x = proj(a_burgers, a_dislocation_vector)
 
     print(np.abs(a_dislocation_vector / np.linalg.norm(a_dislocation_vector)))
-    print()
+
     # if the burgers vector and the dislocation vector are perpendicular. In other words, it's just an edge dislocation
     if (x == np.zeros(3)).all():
         x = a_dislocation_vector
@@ -288,5 +266,5 @@ if __name__ == '__main__':
     if(num_of_arguments > 3):
         wrap = True
     else:
-        wrap = False    
+        wrap = False
     do(a_n, aa_dislocations, lattice_constant, wrap)
