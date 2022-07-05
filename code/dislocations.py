@@ -13,7 +13,6 @@ Z_INDEX = 2
 
 
 def do(a_n, aa_dislocations, lattice_constant, wrap):
-
     # Calculate the constants.
     burgers = lattice_constant / np.sqrt(2)
     # Build one cell.
@@ -50,47 +49,19 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
         a_burgers = a_dislocation[3:6]
         a_dislocation_vector = a_dislocation[6:9]
 
-
-        # a_burgers = a_burgers / np.linalg.norm(a_burgers)
-        # a_burgers = lattice_constant * a_burgers
-        # a_burgers = (lattice_constant/3**0.5) * a_burgers
-        # a_burgers = (lattice_constant/6) * a_burgers
-
         a_burgers = lattice_constant * a_burgers
         a_dislocation_vector = a_dislocation_vector / np.linalg.norm(a_dislocation_vector)
 
-
         aa_new_coordinate_system = getNewCoordinateSystem(a_dislocation_vector, a_burgers)
-        print("aa_new_coordinate_system:")
-        print(aa_new_coordinate_system)
         aa_new_coordinate_system_inv = np.linalg.inv(aa_new_coordinate_system)
-        print("aa_new_coordinate_system_inv:")
-        print(aa_new_coordinate_system_inv)
 
         # transformation
         for i in range(len(aa_atom_locations)):
             aa_atom_locations[i] = transformation(aa_new_coordinate_system_inv, aa_atom_locations[i])
 
-
-        print("a_dislocation_vector before")
-        print(a_dislocation_vector)
         a_dislocation_vector = transformation(aa_new_coordinate_system_inv, a_dislocation_vector)
-        if(a_dislocation_vector[1]!=0 or a_dislocation_vector[2]!=0):
-            print(">>>> error the dislocation ")
-        print("a_dislocation_vector after")
-        print(a_dislocation_vector)
-
-        print("a_dislocation_line_coordinates before")
-        print(a_dislocation_line_coordinates)
         a_dislocation_line_coordinates = transformation(aa_new_coordinate_system_inv, a_dislocation_line_coordinates)
-        print("a_dislocation_line_coordinates after")
-        print(a_dislocation_line_coordinates)
-
-        print("a_burgers before")
-        print(a_burgers)
         a_burgers = transformation(aa_new_coordinate_system_inv, a_burgers)
-        print("a_burgers after")
-        print(a_burgers)
 
         # movements
         aa_atom_locations = aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_burgers)
@@ -98,8 +69,6 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
         # transformation
         for i in range(len(aa_atom_locations)):
             aa_atom_locations[i] = transformation(aa_new_coordinate_system, aa_atom_locations[i])
-
-        break
 
     # After the atoms have been shifted, some of them might have moved out of the box.
     # If the box is periodic, we have to get them back in.
@@ -123,14 +92,11 @@ def aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_b
     # Their short names are for the sake of brevity in the equations.
     a_y = aa_atom_locations[:, Y_INDEX] - a_dislocation_line_coordinates[Y_INDEX]
     a_z = aa_atom_locations[:, Z_INDEX] - a_dislocation_line_coordinates[Z_INDEX]
-    print(a_y)
-    print(a_z)
     # Calculate the displacement of each atom.
     aa_displacements = np.zeros(aa_atom_locations.shape)
 
     # Calculate the displacement due to the edge and screw components.
     # The formula for the displacement of each atom in an edge dislocation is taken from Hirth p. 78.
-    print(a_burgers[Z_INDEX])
     if(a_burgers[Z_INDEX] != 0):
         aa_displacements[:, Z_INDEX] = a_burgers[Z_INDEX] / 2 / np.pi * (aPositiveAngle(a_y, a_z) + a_z * a_y / 2 / (1 - POISSONS_RATIO) / (a_z**2 + a_y**2))
         aa_displacements[:, Y_INDEX] = -a_burgers[Z_INDEX] / 2 / np.pi \
@@ -190,7 +156,6 @@ def aaGetDislocations():
 # This function returns an angle ranging from 0 to 2*pi.
 def aPositiveAngle(a_opposite_side, a_adjacent_side):
     angle = np.arctan2(a_opposite_side, a_adjacent_side)
-    # angle = np.arctan2(a_adjacent_side, a_opposite_side)
     angle[angle < 0] += 2 * np.pi
     return angle
 
@@ -210,9 +175,6 @@ def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
     # the Z axis is the part of the burgers vector which is vertical to the dislocation's direction.
     # the Y axis is the vector that is vertical to the others.
     x = proj(a_burgers, a_dislocation_vector)
-
-    print(np.abs(a_dislocation_vector / np.linalg.norm(a_dislocation_vector)))
-
     # if the burgers vector and the dislocation vector are perpendicular. In other words, it's just an edge dislocation
     if (x == np.zeros(3)).all():
         x = a_dislocation_vector
