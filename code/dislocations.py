@@ -50,47 +50,22 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
         a_burgers = a_dislocation[3:6]
         a_dislocation_vector = a_dislocation[6:9]
 
-
-        # a_burgers = a_burgers / np.linalg.norm(a_burgers)
-        # a_burgers = lattice_constant * a_burgers
-        # a_burgers = (lattice_constant/3**0.5) * a_burgers
-        # a_burgers = (lattice_constant/6) * a_burgers
-
         a_burgers = lattice_constant * a_burgers
+        # todo: why we need to normal the dislocation vector?
         a_dislocation_vector = a_dislocation_vector / np.linalg.norm(a_dislocation_vector)
 
-
         aa_new_coordinate_system = getNewCoordinateSystem(a_dislocation_vector, a_burgers)
-        print("aa_new_coordinate_system:")
         print(aa_new_coordinate_system)
         aa_new_coordinate_system_inv = np.linalg.inv(aa_new_coordinate_system)
-        print("aa_new_coordinate_system_inv:")
         print(aa_new_coordinate_system_inv)
 
         # transformation
         for i in range(len(aa_atom_locations)):
             aa_atom_locations[i] = transformation(aa_new_coordinate_system_inv, aa_atom_locations[i])
-
-
-        print("a_dislocation_vector before")
-        print(a_dislocation_vector)
-        a_dislocation_vector = transformation(aa_new_coordinate_system_inv, a_dislocation_vector)
-        if(a_dislocation_vector[1]!=0 or a_dislocation_vector[2]!=0):
-            print(">>>> error the dislocation ")
-        print("a_dislocation_vector after")
-        print(a_dislocation_vector)
-
-        print("a_dislocation_line_coordinates before")
-        print(a_dislocation_line_coordinates)
+        # a_dislocation_vector = transformation(aa_new_coordinate_system_inv, a_dislocation_vector)
         a_dislocation_line_coordinates = transformation(aa_new_coordinate_system_inv, a_dislocation_line_coordinates)
-        print("a_dislocation_line_coordinates after")
-        print(a_dislocation_line_coordinates)
-
-        print("a_burgers before")
-        print(a_burgers)
         a_burgers = transformation(aa_new_coordinate_system_inv, a_burgers)
-        print("a_burgers after")
-        print(a_burgers)
+
 
         # movements
         aa_atom_locations = aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_burgers)
@@ -98,7 +73,6 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
         # transformation
         for i in range(len(aa_atom_locations)):
             aa_atom_locations[i] = transformation(aa_new_coordinate_system, aa_atom_locations[i])
-
         break
 
     # After the atoms have been shifted, some of them might have moved out of the box.
@@ -189,9 +163,12 @@ def aaGetDislocations():
 
 # This function returns an angle ranging from 0 to 2*pi.
 def aPositiveAngle(a_opposite_side, a_adjacent_side):
+
     angle = np.arctan2(a_opposite_side, a_adjacent_side)
     # angle = np.arctan2(a_adjacent_side, a_opposite_side)
     angle[angle < 0] += 2 * np.pi
+    print("angle")
+    print(angle)
     return angle
 
 
@@ -232,6 +209,7 @@ def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
     else:
         z = a_burgers - x
 
+    # y = np.cross(x, z)
     y = np.cross(z, x)
 
     # normalization the axis
@@ -244,7 +222,6 @@ def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
 if __name__ == '__main__':
 
     num_of_arguments = len(sys.argv)
-
     if num_of_arguments > 3:
         print('create_one_dislocation.py usage: create_one_dislocation.py <folder> [lattice_constant] [wrap]')
         print('<folder> should contain one file called dimensions.ini, and one file called dislocations.ini.')
