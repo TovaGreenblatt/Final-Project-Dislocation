@@ -91,19 +91,19 @@ def aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_b
     # a_y is the distance of each atom from the dislocation line in the y axis, and a_z is the distance of each atom from the dislocation line in the z axis.
     # Their short names are for the sake of brevity in the equations.
     a_y = aa_atom_locations[:, Y_INDEX] - a_dislocation_line_coordinates[Y_INDEX]
-    a_z = aa_atom_locations[:, Z_INDEX] - a_dislocation_line_coordinates[Z_INDEX]
+    a_x = aa_atom_locations[:, X_INDEX] - a_dislocation_line_coordinates[X_INDEX]
     # Calculate the displacement of each atom.
     aa_displacements = np.zeros(aa_atom_locations.shape)
 
     # Calculate the displacement due to the edge and screw components.
     # The formula for the displacement of each atom in an edge dislocation is taken from Hirth p. 78.
-    if(a_burgers[Z_INDEX] != 0):
-        aa_displacements[:, Z_INDEX] = a_burgers[Z_INDEX] / 2 / np.pi * (aPositiveAngle(a_y, a_z) + a_z * a_y / 2 / (1 - POISSONS_RATIO) / (a_z**2 + a_y**2))
-        aa_displacements[:, Y_INDEX] = -a_burgers[Z_INDEX] / 2 / np.pi \
-                                       * ((1 - 2 * POISSONS_RATIO) / 4 / (1 - POISSONS_RATIO) * np.log(a_z**2 + a_y**2) + (a_z**2 - a_y**2) / 4 / (1 - POISSONS_RATIO) / (a_z**2 + a_y**2))
-    # The formula for the displacement of each atom in a screw dislocation is taken from Hirth p. 60.
     if(a_burgers[X_INDEX] != 0):
-        aa_displacements[:, X_INDEX] = a_burgers[X_INDEX] / 2 / np.pi * aPositiveAngle(a_y, a_z)
+        aa_displacements[:, X_INDEX] = a_burgers[X_INDEX] / 2 / np.pi * (aPositiveAngle(a_y, a_x) + a_x * a_y / 2 / (1 - POISSONS_RATIO) / (a_x**2 + a_y**2))
+        aa_displacements[:, Y_INDEX] = -a_burgers[X_INDEX] / 2 / np.pi \
+                                       * ((1 - 2 * POISSONS_RATIO) / 4 / (1 - POISSONS_RATIO) * np.log(a_x**2 + a_y**2) + (a_x**2 - a_y**2) / 4 / (1 - POISSONS_RATIO) / (a_x**2 + a_y**2))
+    # The formula for the displacement of each atom in a screw dislocation is taken from Hirth p. 60.
+    if(a_burgers[Z_INDEX] != 0):
+        aa_displacements[:, Z_INDEX] = a_burgers[Z_INDEX] / 2 / np.pi * aPositiveAngle(a_y, a_x)
     # Add the displacements back to the atom locations.
     aa_atom_locations += aa_displacements
     return aa_atom_locations
@@ -171,28 +171,28 @@ def transformation(new_matrix_inv, old_point):
 def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
     # we wanted to get rid of one of the dimensions of the burgers vector, because of the assumption
     # in the Theory_of_dislocation book (John Price Hirth, Jens Lothe), that it has only two dimensions.
-    # that's why we made a new Coordinate system in which the X axis is the dislocation's direction,
-    # the Z axis is the part of the burgers vector which is vertical to the dislocation's direction.
+    # that's why we made a new Coordinate system in which the Z axis is the dislocation's direction,
+    # the X axis is the part of the burgers vector which is vertical to the dislocation's direction.
     # the Y axis is the vector that is vertical to the others.
-    x = proj(a_burgers, a_dislocation_vector)
+    z = proj(a_burgers, a_dislocation_vector)
     # if the burgers vector and the dislocation vector are perpendicular. In other words, it's just an edge dislocation
-    if (x == np.zeros(3)).all():
-        x = a_dislocation_vector
-        z = a_burgers
+    if (z == np.zeros(3)).all():
+        z = np.copy(a_dislocation_vector)
+        x = np.copy(a_burgers)
 
     # if the burgers vector and the dislocation vector are parallel. In other words, it's just a screw dislocation
-    elif (np.abs(a_burgers / np.linalg.norm(a_burgers)) == np.abs(x / np.linalg.norm(x))).all():
-        if a_burgers[Z_INDEX] != 0:
-            value = -(a_burgers[X_INDEX] + a_burgers[Y_INDEX]) / a_burgers[Z_INDEX]
-            z = (1, 1, value)
-        elif a_burgers[Y_INDEX] != 0:
-            value = -(a_burgers[X_INDEX] + a_burgers[Z_INDEX]) / a_burgers[Y_INDEX]
-            z = (1, value, 1)
-        else:
+    elif (np.abs(a_burgers / np.linalg.norm(a_burgers)) == np.abs(z / np.linalg.norm(z))).all():
+        if a_burgers[X_INDEX] != 0:
             value = -(a_burgers[Z_INDEX] + a_burgers[Y_INDEX]) / a_burgers[X_INDEX]
-            z = (value, 1, 1)
+            x = (1, 1, value)
+        elif a_burgers[Y_INDEX] != 0:
+            value = -(a_burgers[Z_INDEX] + a_burgers[X_INDEX]) / a_burgers[Y_INDEX]
+            x = (1, value, 1)
+        else:
+            value = -(a_burgers[X_INDEX] + a_burgers[Y_INDEX]) / a_burgers[Z_INDEX]
+            x = (value, 1, 1)
     else:
-        z = a_burgers - x
+        x = a_burgers - z
 
     y = np.cross(z, x)
 
