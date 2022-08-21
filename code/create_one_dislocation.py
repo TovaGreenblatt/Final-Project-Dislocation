@@ -123,7 +123,7 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
         for i in range(len(aa_atom_locations)):
             aa_atom_locations[i] = transformation(aa_new_coordinate_system, aa_atom_locations[i])
 
-        break;
+        # break;
 
     # After the atoms have been shifted, some of them might have moved out of the box.
     # If the box is periodic, we have to get them back in.
