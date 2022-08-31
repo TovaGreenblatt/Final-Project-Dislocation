@@ -184,13 +184,13 @@ def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
     elif (np.abs(a_burgers / np.linalg.norm(a_burgers)) == np.abs(z / np.linalg.norm(z))).all():
         if a_burgers[X_INDEX] != 0:
             value = -(a_burgers[Z_INDEX] + a_burgers[Y_INDEX]) / a_burgers[X_INDEX]
-            x = (1, 1, value)
+            x = (value, 1, 1)
         elif a_burgers[Y_INDEX] != 0:
             value = -(a_burgers[Z_INDEX] + a_burgers[X_INDEX]) / a_burgers[Y_INDEX]
             x = (1, value, 1)
         else:
             value = -(a_burgers[X_INDEX] + a_burgers[Y_INDEX]) / a_burgers[Z_INDEX]
-            x = (value, 1, 1)
+            x = (1, 1, value)
     else:
         x = a_burgers - z
 
