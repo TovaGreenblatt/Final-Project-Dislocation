@@ -57,26 +57,9 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
     # The other three coordinates are the Burgers vector, in units of the Burgers vector length of one Burgers vector.
 
     for a_dislocation in aa_dislocations:
-        a_dislocation_line_coordinates = (1, 1, 1)
-        temp = np.zeros(3)
-        temp[0] = -3**0.5/2
-        temp[1] = 0
-        temp[2] = 1/2
-        # temp[2]=-0
-        # temp[0] = 0.5
-        # temp[1] = (2/3)**.5
-        a_burgers = (burgers) * temp
-        temp1 = np.zeros(3)
-        # temp1[0] = 0.14142
-        # temp1[1] = 0.46188
-        # temp1[2] = -0.40824
-        temp1[0] = 0
-        temp1[1] = (2*2**0.5)/37
-        temp1[2] = -1/3
-        a_dislocation_vector = temp
-        # a_dislocation_line_coordinates = a_dislocation[0:3]
-        # a_burgers = burgers * a_dislocation[3:6]
-        # a_dislocation_vector = a_dislocation[6:9]
+        a_dislocation_line_coordinates = a_dislocation[0:3]
+        a_burgers = burgers * a_dislocation[3:6]
+        a_dislocation_vector = a_dislocation[6:9]
 
 
         # a_burgers = a_burgers / np.linalg.norm(a_burgers)
