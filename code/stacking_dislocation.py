@@ -63,6 +63,7 @@ def do(a_n, aa_dislocations, lattice_constant, wrap):
 
         aa_new_coordinate_system = getStackingCoordinateSystem()
         aa_new_coordinate_system_inv = np.linalg.inv(aa_new_coordinate_system)
+        a_dislocation_line_coordinates = transformation(aa_new_coordinate_system_inv, a_dislocation_line_coordinates)
         a_dislocation_vector = transformation(aa_new_coordinate_system_inv, a_dislocation_vector)
         a_burgers = transformation(aa_new_coordinate_system_inv, a_burgers)
         a_burgers = lattice_constant * a_burgers
