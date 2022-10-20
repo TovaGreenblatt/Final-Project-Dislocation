@@ -2,6 +2,7 @@ import numpy as np
 import os
 import sys
 import files_handle
+import mathematical_functions as mf
 
 # A is the fcc cell dimension.
 FCC_LATTICE_CONSTANT = 3.615
@@ -61,31 +62,27 @@ def do(a_n, aa_dislocations, lattice_constant, wrap, folder):
         a_burgers = a_dislocation[3:6]
         a_dislocation_vector = a_dislocation[6:9]
 
-        aa_new_coordinate_system = getStackingCoordinateSystem()
-        aa_new_coordinate_system_inv = np.linalg.inv(aa_new_coordinate_system)
-        a_dislocation_line_coordinates = transformation(aa_new_coordinate_system_inv, a_dislocation_line_coordinates)
-        a_dislocation_vector = transformation(aa_new_coordinate_system_inv, a_dislocation_vector)
-        a_burgers = transformation(aa_new_coordinate_system_inv, a_burgers)
+        aa_new_coordinate_system_inv = getStackingCoordinateSystemInv()
+        a_dislocation_line_coordinates = mf.transformation(aa_new_coordinate_system_inv, a_dislocation_line_coordinates)
+        a_dislocation_vector = mf.transformation(aa_new_coordinate_system_inv, a_dislocation_vector)
+        a_burgers = mf.transformation(aa_new_coordinate_system_inv, a_burgers)
         a_burgers = lattice_constant * a_burgers
 
-        aa_new_coordinate_system = getNewCoordinateSystem(a_dislocation_vector, a_burgers)
+        aa_new_coordinate_system = mf.getNewCoordinateSystem(a_dislocation_vector, a_burgers)
         aa_new_coordinate_system_inv = np.linalg.inv(aa_new_coordinate_system)
 
         # transformation
-        for i in range(len(aa_atom_locations)):
-            aa_atom_locations[i] = transformation(aa_new_coordinate_system_inv, aa_atom_locations[i])
-
-        a_dislocation_vector = transformation(aa_new_coordinate_system_inv, a_dislocation_vector)
-        a_dislocation_line_coordinates = transformation(aa_new_coordinate_system_inv, a_dislocation_line_coordinates)
-        a_burgers = transformation(aa_new_coordinate_system_inv, a_burgers)
+        mf.matrixTransformation(aa_new_coordinate_system_inv, aa_atom_locations)
+        
+        a_dislocation_vector = mf.transformation(aa_new_coordinate_system_inv, a_dislocation_vector)
+        a_dislocation_line_coordinates = mf.transformation(aa_new_coordinate_system_inv, a_dislocation_line_coordinates)
+        a_burgers = mf.transformation(aa_new_coordinate_system_inv, a_burgers)
 
         # movements
         aa_atom_locations = aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_burgers)
 
         # transformation
-        for i in range(len(aa_atom_locations)):
-            aa_atom_locations[i] = transformation(aa_new_coordinate_system, aa_atom_locations[i])
-
+        mf.matrixTransformation(aa_new_coordinate_system, aa_atom_locations)
         # break
 
     # After the atoms have been shifted, some of them might have moved out of the box.
@@ -116,107 +113,23 @@ def aaDislocationByStrain(aa_atom_locations, a_dislocation_line_coordinates, a_b
     # Calculate the displacement due to the edge and screw components.
     # The formula for the displacement of each atom in an edge dislocation is taken from Hirth p. 78.
     if(a_burgers[X_INDEX] != 0):
-        aa_displacements[:, X_INDEX] = a_burgers[X_INDEX] / 2 / np.pi * (aPositiveAngle(a_y, a_x) + a_x * a_y / 2 / (1 - POISSONS_RATIO) / (a_x**2 + a_y**2))
+        aa_displacements[:, X_INDEX] = a_burgers[X_INDEX] / 2 / np.pi * (mf.aPositiveAngle(a_y, a_x) + a_x * a_y / 2 / (1 - POISSONS_RATIO) / (a_x**2 + a_y**2))
         aa_displacements[:, Y_INDEX] = -a_burgers[X_INDEX] / 2 / np.pi \
                                        * ((1 - 2 * POISSONS_RATIO) / 4 / (1 - POISSONS_RATIO) * np.log(a_x**2 + a_y**2) + (a_x**2 - a_y**2) / 4 / (1 - POISSONS_RATIO) / (a_x**2 + a_y**2))
     # The formula for the displacement of each atom in a screw dislocation is taken from Hirth p. 60.
     if(a_burgers[Z_INDEX] != 0):
-        aa_displacements[:, Z_INDEX] = a_burgers[Z_INDEX] / 2 / np.pi * aPositiveAngle(a_y, a_x)
+        aa_displacements[:, Z_INDEX] = a_burgers[Z_INDEX] / 2 / np.pi * mf.aPositiveAngle(a_y, a_x)
     # Add the displacements back to the atom locations.
     aa_atom_locations += aa_displacements
     return aa_atom_locations
 
 
-
-
-
-
-def dumpToFile(aa_atom_locations, aa_dimensions, s_name):
-
-    # The number of atoms must be written to the file.
-    num_of_atoms = aa_atom_locations.shape[0]
-    # Write into the file.
-    f = open(s_name, 'w')
-    f.write('Position data for Ni File\n')
-    f.write('\n')
-    f.write('%u atoms\n' % num_of_atoms)
-    f.write('1 atom types\n')
-    f.write('%f\t%f\t xlo xhi\n' % (aa_dimensions[0, X_INDEX], aa_dimensions[1, X_INDEX]))
-    f.write('%f\t%f\t ylo yhi\n' % (aa_dimensions[0, Y_INDEX], aa_dimensions[1, Y_INDEX]))
-    f.write('%f\t%f\t zlo zhi\n' % (aa_dimensions[0, Z_INDEX], aa_dimensions[1, Z_INDEX]))
-    f.write('0.0 0.0 0.0 xy xz yz\n')
-    f.write('\n')
-    f.write('Atoms\n')
-    f.write('\n')
-    for i, a_atom in enumerate(aa_atom_locations, 1):
-        f.write('%u\t 1\t %f\t%f\t%f\n' % (i, a_atom[X_INDEX], a_atom[Y_INDEX], a_atom[Z_INDEX]))
-    f.close()
-    print('Atom file created.')
-
-
-
-# This function returns an angle ranging from 0 to 2*pi.
-def aPositiveAngle(a_opposite_side, a_adjacent_side):
-    angle = np.arctan2(a_opposite_side, a_adjacent_side)
-    angle[angle < 0] += 2 * np.pi
-    return angle
-
-
-# Dividing the vector to the part in the direction of the dislocation
-def proj(a, b):
-    return np.abs(np.dot(a, b) / np.dot(b, b)) * b
-
-
-def transformation(new_matrix_inv, old_point):
-    return np.matmul(new_matrix_inv, old_point).getA1()
-
-def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
-    # we wanted to get rid of one of the dimensions of the burgers vector, because of the assumption
-    # in the Theory_of_dislocation book (John Price Hirth, Jens Lothe), that it has only two dimensions.
-    # that's why we made a new Coordinate system in which the Z axis is the dislocation's direction,
-    # the X axis is the part of the burgers vector which is vertical to the dislocation's direction.
-    # the Y axis is the vector that is vertical to the others.
-    z = proj(a_burgers, a_dislocation_vector)
-    # if the burgers vector and the dislocation vector are perpendicular. In other words, it's just an edge dislocation
-    if (z == np.zeros(3)).all():
-        z = np.copy(a_dislocation_vector)
-        x = np.copy(a_burgers)
-
-    # if the burgers vector and the dislocation vector are parallel. In other words, it's just a screw dislocation
-    elif (np.abs(a_burgers / np.linalg.norm(a_burgers)) == np.abs(z / np.linalg.norm(z))).all():
-        if a_burgers[X_INDEX] != 0:
-            value = -(a_burgers[Z_INDEX] + a_burgers[Y_INDEX]) / a_burgers[X_INDEX]
-            x = (value, 1, 1)
-        elif a_burgers[Y_INDEX] != 0:
-            value = -(a_burgers[Z_INDEX] + a_burgers[X_INDEX]) / a_burgers[Y_INDEX]
-            x = (1, value, 1)
-        else:
-            value = -(a_burgers[X_INDEX] + a_burgers[Y_INDEX]) / a_burgers[Z_INDEX]
-            x = (1, 1, value)
-    else:
-        x = a_burgers - z
-
-    y = np.cross(z, x)
-
-    # normalization the axis
-    x = x / np.linalg.norm(x)
-    y = y / np.linalg.norm(y)
-    z = z / np.linalg.norm(z)
-
-    return np.matrix([x, y, z]).T
-
-
-def getStackingCoordinateSystem():
+def getStackingCoordinateSystemInv():
     x = np.array((-1,1,0))
     y = np.array((1,1,1))
     z = np.array((1,1,-2))
+    return mf.getNormalizedInvMatrix(x, y, z)
 
-    # normalization the axis
-    x = x / np.linalg.norm(x)
-    y = y / np.linalg.norm(y)
-    z = z / np.linalg.norm(z)
-
-    return np.matrix([x, y, z]).T
 
 
 if __name__ == '__main__':
