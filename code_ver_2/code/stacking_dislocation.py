@@ -4,11 +4,7 @@ import crystals
 
 # A is the fcc cell dimension.
 FCC_LATTICE_CONSTANT = 3.615
-POISSONS_RATIO = 0.33
-# Enumerators
-X_INDEX = 0
-Y_INDEX = 1
-Z_INDEX = 2
+
 
 
 def do(a_dimensions, aa_dislocations, lattice_constant, wrap, folder):
