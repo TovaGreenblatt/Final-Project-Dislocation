@@ -1,10 +1,6 @@
 import numpy as np
+import constant as const
 
-
-# Enumerators
-X_INDEX = 0
-Y_INDEX = 1
-Z_INDEX = 2
 
 
 def getNormalizedMatrix(x, y, z):
@@ -55,14 +51,14 @@ def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
 
     # if the burgers vector and the dislocation vector are parallel. In other words, it's just a screw dislocation
     elif (np.abs(a_burgers / np.linalg.norm(a_burgers)) == np.abs(z / np.linalg.norm(z))).all():
-        if a_burgers[X_INDEX] != 0:
-            value = -(a_burgers[Z_INDEX] + a_burgers[Y_INDEX]) / a_burgers[X_INDEX]
+        if a_burgers[const.X_INDEX] != 0:
+            value = -(a_burgers[const.Z_INDEX] + a_burgers[const.Y_INDEX]) / a_burgers[const.X_INDEX]
             x = (value, 1, 1)
-        elif a_burgers[Y_INDEX] != 0:
-            value = -(a_burgers[Z_INDEX] + a_burgers[X_INDEX]) / a_burgers[Y_INDEX]
+        elif a_burgers[const.Y_INDEX] != 0:
+            value = -(a_burgers[const.Z_INDEX] + a_burgers[const.X_INDEX]) / a_burgers[const.Y_INDEX]
             x = (1, value, 1)
         else:
-            value = -(a_burgers[X_INDEX] + a_burgers[Y_INDEX]) / a_burgers[Z_INDEX]
+            value = -(a_burgers[const.X_INDEX] + a_burgers[const.Y_INDEX]) / a_burgers[const.Z_INDEX]
             x = (1, 1, value)
     else:
         x = a_burgers - z
