@@ -7,6 +7,7 @@ import constant as const
 class crystal(ABC):
     _aa_dimensions = None
     _aa_atom_locations = None
+    lattice_constant = None
 
     @abstractmethod
     def build(self):
@@ -37,7 +38,7 @@ class FCC_crystal(crystal):
     def __init__(self, lattice_constant, a_dimensions):
         super().__init__()
         self.lattice_constant = lattice_constant
-        self.a_dimensions = a_dimensions
+        self._aa_dimensions = a_dimensions
         self.build()
 
     # overriding abstract method
@@ -67,7 +68,7 @@ class FCC_crystal(crystal):
         # Create an array skeleton with nx*ny*nz cells. The number of cells in each dimension must be even.
         # The cells will be indexed from in each axis i from -ni/2 to ni/2 - 1.
         # The values of nx, ny, and nz are taken from an ini file, whose name must be specified in the command line call to the program.
-        aa_box_edges = np.column_stack((-self.a_dimensions / 2, self.a_dimensions / 2))
+        aa_box_edges = np.column_stack((-self._aa_dimensions / 2, self._aa_dimensions / 2))
         aa_cell_ranges = [np.arange(i[0], i[1]) for i in aa_box_edges]
         aa_cell_indices = np.array([(x, y, z) for x in aa_cell_ranges[const.X_INDEX] for y in aa_cell_ranges[const.Y_INDEX] for z in
                                     aa_cell_ranges[const.Z_INDEX]])
@@ -108,7 +109,6 @@ class FCC_crystal(crystal):
     def add_fcc_dislocations(self, aa_dislocations):
         for a_dislocation in aa_dislocations:
             self.add_fcc_dislocation(a_dislocation[0:3], a_dislocation[3:6], a_dislocation[6:9])
-
 
     def add_dislocations(self, aa_dislocations):
         for a_dislocation in aa_dislocations:
