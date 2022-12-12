@@ -6,3 +6,6 @@ Z_INDEX = 2
 
 # copper
 COPPER_POISSONS_RATIO = 0.33
+
+# epsilon
+epsilon = 0.000001

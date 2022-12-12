@@ -70,8 +70,9 @@ class FCC_crystal(crystal):
         # The values of nx, ny, and nz are taken from an ini file, whose name must be specified in the command line call to the program.
         aa_box_edges = np.column_stack((-self._aa_dimensions / 2, self._aa_dimensions / 2))
         aa_cell_ranges = [np.arange(i[0], i[1]) for i in aa_box_edges]
-        aa_cell_indices = np.array([(x, y, z) for x in aa_cell_ranges[const.X_INDEX] for y in aa_cell_ranges[const.Y_INDEX] for z in
-                                    aa_cell_ranges[const.Z_INDEX]])
+        aa_cell_indices = np.array(
+            [(x, y, z) for x in aa_cell_ranges[const.X_INDEX] for y in aa_cell_ranges[const.Y_INDEX] for z in
+             aa_cell_ranges[const.Z_INDEX]])
         # Calculate the coordinates of each atom.
         a_cell_vectors = self.lattice_constant * np.array((1 / np.sqrt(2), np.sqrt(3), 3 / np.sqrt(6)))
         aa_cell_locations = aa_cell_indices * a_cell_vectors
@@ -116,7 +117,8 @@ class FCC_crystal(crystal):
 
     # This function creates a dislocation line in the positive z direction, on the Thompson tetrahedron ABC plane.
     # The x component of the Burgers vector is the screw component. The z component is the edge component.
-    def aaDislocationByStrain(self, a_dislocation_line_coordinates, a_burgers, poissons_ratio=const.COPPER_POISSONS_RATIO):
+    def aaDislocationByStrain(self, a_dislocation_line_coordinates, a_burgers,
+                              poissons_ratio=const.COPPER_POISSONS_RATIO):
         # Find the location of each atom relative to the dislocation line.
         # a_y is the distance of each atom from the dislocation line in the y axis, and a_z is the distance of each atom from the dislocation line in the z axis.
         # Their short names are for the sake of brevity in the equations.
@@ -127,14 +129,14 @@ class FCC_crystal(crystal):
 
         # Calculate the displacement due to the edge and screw components.
         # The formula for the displacement of each atom in an edge dislocation is taken from Hirth p. 78.
-        if (a_burgers[const.X_INDEX] != 0):
+        if (np.abs(a_burgers[const.X_INDEX]) > const.epsilon):
             aa_displacements[:, const.X_INDEX] = a_burgers[const.X_INDEX] / 2 / np.pi * (
                     mf.aPositiveAngle(a_y, a_x) + a_x * a_y / 2 / (1 - poissons_ratio) / (a_x ** 2 + a_y ** 2))
             aa_displacements[:, const.Y_INDEX] = -a_burgers[const.X_INDEX] / 2 / np.pi \
-                                           * ((1 - 2 * poissons_ratio) / 4 / (1 - poissons_ratio) * np.log(
+                                                 * ((1 - 2 * poissons_ratio) / 4 / (1 - poissons_ratio) * np.log(
                 a_x ** 2 + a_y ** 2) + (a_x ** 2 - a_y ** 2) / 4 / (1 - poissons_ratio) / (a_x ** 2 + a_y ** 2))
         # The formula for the displacement of each atom in a screw dislocation is taken from Hirth p. 60.
-        if (a_burgers[const.Z_INDEX] != 0):
+        if (np.abs(a_burgers[const.Z_INDEX]) > const.epsilon):
             aa_displacements[:, const.Z_INDEX] = a_burgers[const.Z_INDEX] / 2 / np.pi * mf.aPositiveAngle(a_y, a_x)
         # Add the displacements back to the atom locations.
         self._aa_atom_locations += aa_displacements
