@@ -27,7 +27,7 @@ def matrixTransformation(new_matrix_inv, points):
 # This function returns an angle ranging from 0 to 2*pi.
 def aPositiveAngle(a_opposite_side, a_adjacent_side):
     angle = np.arctan2(a_opposite_side, a_adjacent_side)
-    angle[angle < 0] += 2 * np.pi
+    angle[angle < const.epsilon] += 2 * np.pi
     return angle
 
 
@@ -51,10 +51,10 @@ def getNewCoordinateSystem(a_dislocation_vector, a_burgers):
 
     # if the burgers vector and the dislocation vector are parallel. In other words, it's just a screw dislocation
     elif (np.abs(a_burgers / np.linalg.norm(a_burgers)) == np.abs(z / np.linalg.norm(z))).all():
-        if a_burgers[const.X_INDEX] != 0:
+        if np.abs(a_burgers[const.X_INDEX]) > const.epsilon:
             value = -(a_burgers[const.Z_INDEX] + a_burgers[const.Y_INDEX]) / a_burgers[const.X_INDEX]
             x = (value, 1, 1)
-        elif a_burgers[const.Y_INDEX] != 0:
+        elif np.abs(a_burgers[const.Y_INDEX]) > const.epsilon:
             value = -(a_burgers[const.Z_INDEX] + a_burgers[const.X_INDEX]) / a_burgers[const.Y_INDEX]
             x = (1, value, 1)
         else:
